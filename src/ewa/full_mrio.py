@@ -15,8 +15,12 @@ def solve_unit_costs(A, value_added_coeff):
     return lu.solve(np.asarray(value_added_coeff,float))
 
 def price_residual(A,p,v):
+    """Return scale-aware diagnostics for p = A.T p + v."""
     p=np.asarray(p,float); v=np.asarray(v,float); A=np.asarray(A,float)
-    return float(np.max(np.abs(p-(A.T@p+v))))
+    r=p-(A.T@p+v)
+    absmax=float(np.max(np.abs(r)))
+    scale=max(float(np.max(np.abs(p))),float(np.max(np.abs(v))),1.0)
+    return {"abs_max":absmax,"rel_max":absmax/scale}
 
 def embodied_by_origin_destination(A, final_demand, direct_coeff, sector_regions):
     Y=final_demand
