@@ -1,0 +1,29 @@
+name: Refresh external data
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: "PPP reference year"
+        required: true
+        default: "2014"
+  schedule:
+    - cron: "17 6 1 * *"
+permissions:
+  contents: write
+jobs:
+  ppp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install -r requirements.txt
+      - name: Fetch World Bank PPP
+        run: python scripts/fetch_world_bank_ppp.py --year "${{ inputs.year || '2014' }}"
+      - name: Commit refreshed source snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/external/
+          git diff --cached --quiet || git commit -m "data: refresh World Bank PPP"
+          git push
