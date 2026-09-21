@@ -52,6 +52,13 @@ def main():
     crows=find_rows(fac.index,["compensation","employees"])
     hours=emp.iloc[hrows].astype(float).sum(axis=0)
     compensation=fac.iloc[crows].astype(float).sum(axis=0)
+    # EXIOBASE employment F values are stored in the units declared by the
+    # extension. Normalize to literal hours before any footprint/headline
+    # reporting (e.g. M.hr -> hours).
+    hour_units=[str(emp.unit.iloc[i,0]) for i in hrows] if hasattr(emp,"unit") and emp.unit is not None else []
+    hu=" ".join(hour_units).lower()
+    hour_scale=1e6 if ("m.hr" in hu or "million" in hu) else (1e3 if ("1000" in hu or "khr" in hu) else 1.0)
+    hours=hours*hour_scale
     # Align country-sector columns.
     hours=hours.reindex(compensation.index if isinstance(compensation.index,pd.MultiIndex) else compensation.index)
     if not isinstance(compensation.index,pd.MultiIndex):
@@ -151,7 +158,7 @@ def main():
 
     # Actual employee compensation on the full system; skill rows summed.
     comp_full=fac.iloc[crows].astype(float).sum(axis=0).reindex(full_index).fillna(0.0)
-    hours_full=emp.iloc[hrows].astype(float).sum(axis=0).reindex(full_index).fillna(0.0)
+    hours_full=emp.iloc[hrows].astype(float).sum(axis=0).reindex(full_index).fillna(0.0)*hour_scale
     equal_comp_full=comp_full.copy()
     equal_comp_full.loc[d.index]=d["equal_compensation"]
 
@@ -189,7 +196,13 @@ def main():
     # coefficients hours/output; no wage valuation enters this calculation.
     labor_coeff=np.divide(hours_full.to_numpy(float),x_full,out=np.zeros_like(x_full),where=x_full>0)
     embodied=embodied_by_origin_destination(A_full,Y_full,labor_coeff,full_regions.to_numpy())
-    direct_regions=[r for r in embodied.index if region_to_iso3.get(r)]
+    # Hickel-style global North/South accounting must include EXIOBASE's five
+    # residual world regions. They contain countries not represented as the 44
+    # explicit EXIOBASE economies. For the IMF-advanced-economy comparison,
+    # residual buckets are assigned South; any advanced economies represented
+    # explicitly are already in the explicit North set.
+    row_regions={"WA","WL","WE","WF","WM"}
+    direct_regions=list(embodied.index)
     north_iso2={r for r in direct_regions if region_to_iso3.get(r) in north}
     south_iso2=set(direct_regions)-north_iso2
     s_to_n=float(embodied.loc[list(south_iso2),list(north_iso2)].to_numpy().sum()) if north_iso2 and south_iso2 else 0.0
@@ -224,7 +237,9 @@ def main():
       "actual_price_residual_relative":res_a["rel_max"],"equal_price_residual_relative":res_e["rel_max"],
       "prices_finite":bool(np.isfinite(pa).all() and np.isfinite(pe).all()),
       "north_country_count":int(d.loc[d.region_group=="North","iso3"].nunique()),
-      "south_country_count":int(d.loc[d.region_group=="South","iso3"].nunique())
+      "south_country_count":int(d.loc[d.region_group=="South","iso3"].nunique()),
+      "row_regions_in_embodied_labor":sorted(list(row_regions.intersection(set(direct_regions)))),
+      "employment_hour_scale_to_hours":hour_scale
     }
     validation["passed"]=bool(conservation_rel<1e-10 and max(res_a["rel_max"],res_e["rel_max"])<1e-9 and validation["north_country_count"]>0 and validation["south_country_count"]>0)
     if not validation["passed"]: raise RuntimeError(f"Empirical release validation failed: {validation}")
@@ -246,7 +261,7 @@ def main():
         (out/"countries"/f"{country}.json").write_text(json.dumps(payload,ensure_ascii=False,allow_nan=False)+"\n")
         summary.append({k:payload[k] for k in ["iso3","year","region_group","actual_hourly_comp_eur","equal_hourly_comp_eur","wage_gap_eur_per_hour","hickel_hourly_comp_eur","hickel_gap_eur_per_hour","mean_price_gap","trade_hierarchy_net_million_eur"]})
     (out/"summary.json").write_text(json.dumps(summary,ensure_ascii=False,allow_nan=False)+"\n")
-    (out/"manifest.json").write_text(json.dumps({"data_status":"EMPIRICAL","year":a.year,"exiobase_archive":Path(a.archive).name,"countries":len(summary),"cells":len(d),"productivity":"World Bank SL.GDP.PCAP.EM.KD","ppp":"World Bank PA.NUS.PPP","exchange_rate":"World Bank PA.NUS.FCRF + ECB USD/EUR annual reference rate","ppp_role":"baseline: EXIOBASE EUR -> LCU via MER -> international dollars via PPP -> EWA -> LCU -> EUR for MRIO prices","hickel_scenario":hickel_label,"north_south_definition":"config/regions_hickel_2021.json","exiobase_year_status":"2021 is a now-cast in EXIOBASE 3.9; see docs/hickel-comparison.md","labor_cell_validation":{"zero_hours_dropped":dropped_zero,"invalid_labor_dropped":dropped_invalid,"invalid_macro_dropped":dropped_macro},"validation":validation,"embodied_labor":{"south_to_north_hours":s_to_n,"north_to_south_hours":n_to_s,"net_south_to_north_hours":net_hours,"hickel_style_all_skill_value_eur":hickel_value,"ewa_origin_wage_value_eur":ewa_embodied_value,"reference_net_hours_billion":826.0},"price_system":"full EXIOBASE A/Z/Y; unsupported wage cells retain actual labor compensation; non-labor VA residual retained","note":"Static EWA. Physical embodied-labor flows are calculated separately from monetary valuation. The Hickel-style value remains an all-skill approximation, not an exact skill-matched replication."},indent=2)+"\n")
+    (out/"manifest.json").write_text(json.dumps({"data_status":"EMPIRICAL","year":a.year,"exiobase_archive":Path(a.archive).name,"countries":len(summary),"cells":len(d),"productivity":"World Bank SL.GDP.PCAP.EM.KD","ppp":"World Bank PA.NUS.PPP","exchange_rate":"World Bank PA.NUS.FCRF + ECB USD/EUR annual reference rate","ppp_role":"baseline: EXIOBASE EUR -> LCU via MER -> international dollars via PPP -> EWA -> LCU -> EUR for MRIO prices","hickel_scenario":hickel_label,"north_south_definition":"config/regions_hickel_2021.json","exiobase_year_status":"2021 is a now-cast in EXIOBASE 3.9; see docs/hickel-comparison.md","labor_cell_validation":{"zero_hours_dropped":dropped_zero,"invalid_labor_dropped":dropped_invalid,"invalid_macro_dropped":dropped_macro},"validation":validation,"embodied_labor":{"south_to_north_hours":s_to_n,"north_to_south_hours":n_to_s,"net_south_to_north_hours":net_hours,"hickel_style_all_skill_value_eur":hickel_value,"ewa_origin_wage_value_eur":ewa_embodied_value,"reference_net_hours_billion":826.0,"row_treatment":"WA/WL/WE/WF/WM included in physical South; explicit IMF-advanced economies form North","unit":"hours"},"price_system":"full EXIOBASE A/Z/Y; unsupported wage cells retain actual labor compensation; non-labor VA residual retained","note":"Static EWA. Physical embodied-labor flows are calculated separately from monetary valuation. The Hickel-style value remains an all-skill approximation, not an exact skill-matched replication."},indent=2)+"\n")
     print(f"built {len(summary)} countries / {len(d)} country-sector cells")
 
 if __name__=="__main__": main()
