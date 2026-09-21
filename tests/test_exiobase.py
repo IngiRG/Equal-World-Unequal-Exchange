@@ -16,7 +16,7 @@ def test_counterfactual_price_identity():
     pa=solve_unit_costs(A,la+nl); pe=solve_unit_costs(A,le+nl)
     assert np.allclose(pa,A.T@pa+la+nl)
     assert np.allclose(pe,A.T@pe+le+nl)
-    assert price_residual(A,pa,la+nl)<1e-12
+    assert price_residual(A,pa,la+nl)["rel_max"]<1e-12
 
 def test_embodied_factor_conserves_simple_final_demand():
     A=np.zeros((2,2))
