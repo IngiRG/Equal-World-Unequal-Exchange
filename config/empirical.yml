@@ -1,0 +1,13 @@
+year: 2020
+exiobase:
+  version: "3.9.6"
+  format: "ixi"
+  zenodo_record: "15689391"
+world_bank:
+  ppp_indicator: "PA.NUS.PPP"
+  productivity_indicator: "SL.GDP.PCAP.EM.KD"
+model:
+  productivity_normalization: "world_hours_weighted_mean"
+  wage_pool: "exiobase_compensation_of_employees"
+  normal_return_variant: "residual_nonlabor_value_added"
+  fixed_quantities: true
