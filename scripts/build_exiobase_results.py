@@ -10,6 +10,7 @@ from pathlib import Path
 import numpy as np,pandas as pd
 ROOT=Path(__file__).resolve().parents[1]; sys.path.insert(0,str(ROOT/"src"))
 from ewa.exiobase import construct_counterfactual,counterfactual_prices
+from ewa.scenarios import hickel_northern_wage_counterfactual
 
 def find_row(index,needles):
     labels=[str(x) for x in index]
@@ -18,7 +19,7 @@ def find_row(index,needles):
     return hits[0][0]
 
 def main():
-    ap=argparse.ArgumentParser(); ap.add_argument("--year",type=int,default=2020); ap.add_argument("--archive",required=True); ap.add_argument("--out",default="site/data/real")
+    ap=argparse.ArgumentParser(); ap.add_argument("--year",type=int,default=2021); ap.add_argument("--archive",required=True); ap.add_argument("--out",default="site/data/real")
     a=ap.parse_args()
     import pymrio
     mrio=pymrio.parse_exiobase3(a.archive)
@@ -45,6 +46,12 @@ def main():
     keep=regions.isin(prod.index)
     hours=hours[keep]; compensation=compensation[keep]
     d,ustar=construct_counterfactual(compensation,hours,prod,ppp)
+    region_cfg=json.loads((ROOT/"config/regions_hickel_2021.json").read_text())
+    north=set(region_cfg["north_iso3"])
+    hickel,hickel_label=hickel_northern_wage_counterfactual(d,north)
+    d["region_group"]=hickel["region_group"]
+    d["hickel_hourly_comp_eur"]=hickel["scenario_hourly_comp_eur"]
+    d["hickel_gap_eur_per_hour"]=hickel["scenario_gap_eur_per_hour"]
 
     # Technical coefficients are kept fixed. Unit labor VA is compensation/x.
     A=mrio.A.loc[d.index,d.index].to_numpy(float)
@@ -67,11 +74,14 @@ def main():
           "equal_hourly_comp_eur":float(np.average(g.equal_hourly_comp_eur,weights=w)),
           "wage_gap_eur_per_hour":float(np.average(g.wage_gap_eur_per_hour,weights=w)),
           "mean_price_gap":float(np.average(g.price_gap,weights=np.maximum(x[[d.index.get_loc(i) for i in g.index]],1e-30))),
-          "sectors":[{"sector":str(i[1]),**{k:float(row[k]) for k in ["actual_hourly_comp_eur","effective_labor","equal_hourly_comp_eur","wage_gap_eur_per_hour","actual_price_index","equal_price_index","price_gap"]}} for i,row in g.iterrows()]}
+          "region_group":str(g.region_group.iloc[0]),
+          "hickel_hourly_comp_eur":float(np.average(g.hickel_hourly_comp_eur,weights=w)),
+          "hickel_gap_eur_per_hour":float(np.average(g.hickel_gap_eur_per_hour,weights=w)),
+          "sectors":[{"sector":str(i[1]),**{k:float(row[k]) for k in ["actual_hourly_comp_eur","effective_labor","equal_hourly_comp_eur","wage_gap_eur_per_hour","hickel_hourly_comp_eur","hickel_gap_eur_per_hour","actual_price_index","equal_price_index","price_gap"]}} for i,row in g.iterrows()]}
         (out/"countries"/f"{country}.json").write_text(json.dumps(payload,ensure_ascii=False)+"\n")
-        summary.append({k:payload[k] for k in ["iso3","year","actual_hourly_comp_eur","equal_hourly_comp_eur","wage_gap_eur_per_hour","mean_price_gap"]})
+        summary.append({k:payload[k] for k in ["iso3","year","region_group","actual_hourly_comp_eur","equal_hourly_comp_eur","wage_gap_eur_per_hour","hickel_hourly_comp_eur","hickel_gap_eur_per_hour","mean_price_gap"]})
     (out/"summary.json").write_text(json.dumps(summary,ensure_ascii=False)+"\n")
-    (out/"manifest.json").write_text(json.dumps({"data_status":"EMPIRICAL","year":a.year,"exiobase_archive":Path(a.archive).name,"countries":len(summary),"cells":len(d),"productivity":"World Bank SL.GDP.PCAP.EM.KD","ppp":"World Bank PA.NUS.PPP","note":"Static EWA; current technology/productivity retained. RoW aggregates excluded where no direct country productivity mapping exists."},indent=2)+"\n")
+    (out/"manifest.json").write_text(json.dumps({"data_status":"EMPIRICAL","year":a.year,"exiobase_archive":Path(a.archive).name,"countries":len(summary),"cells":len(d),"productivity":"World Bank SL.GDP.PCAP.EM.KD","ppp":"World Bank PA.NUS.PPP","hickel_scenario":hickel_label,"north_south_definition":"config/regions_hickel_2021.json","exiobase_year_status":"2021 is a now-cast in EXIOBASE 3.9; see docs/hickel-comparison.md","note":"Static EWA plus Hickel-style comparison. Current technology/productivity retained. RoW aggregates excluded where no direct country productivity mapping exists."},indent=2)+"\n")
     print(f"built {len(summary)} countries / {len(d)} country-sector cells")
 
 if __name__=="__main__": main()

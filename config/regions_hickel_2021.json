@@ -1,0 +1,6 @@
+{
+  "name": "Hickel-Hanbury Lemos-Barbour 2024 approximate North/South classification",
+  "note": "North approximates IMF advanced economies, as stated in the paper. Explicit ISO3 membership is versioned here so users can inspect/change it. EXIOBASE aggregate RoW regions require separate handling.",
+  "north_iso3": ["AUS","AUT","BEL","CAN","CYP","CZE","DNK","EST","FIN","FRA","DEU","GRC","HKG","ISL","IRL","ISR","ITA","JPN","KOR","LVA","LTU","LUX","MAC","MLT","NLD","NZL","NOR","PRT","PRI","SGP","SVK","SVN","ESP","SWE","CHE","TWN","GBR","USA"],
+  "south_rule": "all directly represented countries not in north_iso3"
+}

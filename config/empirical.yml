@@ -1,4 +1,4 @@
-year: 2020
+year: 2021
 exiobase:
   version: "3.9.6"
   format: "ixi"
@@ -11,3 +11,9 @@ model:
   wage_pool: "exiobase_compensation_of_employees"
   normal_return_variant: "residual_nonlabor_value_added"
   fixed_quantities: true
+comparison:
+  hickel_mode: true
+  region_definition: "config/regions_hickel_2021.json"
+  reference_currency_year: 2005
+  headline_reference_hours_billion: 826
+  headline_reference_value_trillion_eur: 16.9

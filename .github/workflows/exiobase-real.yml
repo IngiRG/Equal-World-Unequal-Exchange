@@ -5,7 +5,7 @@ on:
       year:
         description: "EXIOBASE core year"
         required: true
-        default: "2020"
+        default: "2021"
 permissions:
   contents: write
 jobs:
