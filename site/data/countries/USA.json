@@ -1,0 +1,77 @@
+{
+  "iso3": "USA",
+  "country": "United States",
+  "status": "DEMONSTRATION — NOT AN EMPIRICAL ESTIMATE",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Observed nominal remuneration",
+      "equation": "wᴺ",
+      "value": 30,
+      "unit": "local currency / hour"
+    },
+    {
+      "id": 2,
+      "title": "PPP adjustment",
+      "equation": "wᴿ = wᴺ / q",
+      "inputs": {
+        "wᴺ": 30,
+        "q": 1
+      },
+      "value": 30,
+      "unit": "international $ / hour"
+    },
+    {
+      "id": 3,
+      "title": "Effective-labor remuneration",
+      "equation": "uᴬ = wᴿ / e",
+      "inputs": {
+        "wᴿ": 30,
+        "e": 1
+      },
+      "value": 30,
+      "unit": "international $ / effective hour"
+    },
+    {
+      "id": 4,
+      "title": "Global Equal World benchmark",
+      "equation": "ū* = Σ(wᴿL) / Σ(eL)",
+      "value": 26.048780487804876,
+      "unit": "international $ / effective hour"
+    },
+    {
+      "id": 5,
+      "title": "Equal World real wage",
+      "equation": "w* = ū*e",
+      "inputs": {
+        "ū*": 26.048780487804876,
+        "e": 1
+      },
+      "value": 26.048780487804876,
+      "unit": "international $ / hour"
+    },
+    {
+      "id": 6,
+      "title": "Static remuneration hierarchy gap",
+      "equation": "Hʷ = w* − wᴿ",
+      "value": -3.951219512195124,
+      "unit": "international $ / hour"
+    }
+  ],
+  "sectors": [
+    {
+      "sector": "Manufacturing",
+      "real_wage": 30,
+      "effective_labor": 1,
+      "actual_effective_remuneration": 30,
+      "equal_real_wage": 26.048780487804876,
+      "real_wage_gap": -3.951219512195124
+    }
+  ],
+  "interpretation": {
+    "actual_real_wage": 30,
+    "equal_real_wage": 26.048780487804876,
+    "gap": -3.951219512195124,
+    "note": "Positive means remuneration would be higher under this specified Equal World. This demo does not establish an empirical transfer or imperialism."
+  }
+}
