@@ -14,6 +14,7 @@ function isEmpirical(){return String(manifest?.data_status||"").toUpperCase()===
 function renderManifest(m){
  const empirical=isEmpirical();
  document.getElementById("status-banner").textContent=empirical?("EMPIRICAL EWA · EXIOBASE "+m.year+" · STATIC COUNTERFACTUAL"): "RESEARCH PROTOTYPE · SYNTHETIC DEMONSTRATION DATA · NOT EMPIRICAL FINDINGS";
+ if(empirical&&m.embodied_labor){const e=m.embodied_labor;document.getElementById("global-results").innerHTML=`<div><b>Physical embodied labour</b><br>South → North: ${fmt(e.south_to_north_hours/1e9)} bn h · North → South: ${fmt(e.north_to_south_hours/1e9)} bn h · Net: ${fmt(e.net_south_to_north_hours/1e9)} bn h</div><div><b>Valuation comparison</b><br>Northern-wage all-skill: €${fmt(e.hickel_style_all_skill_value_eur/1e12)} tn · EWA origin wage: €${fmt(e.ewa_origin_wage_value_eur/1e12)} tn</div><div><b>Release validation</b><br>${m.validation?.passed?"PASS":"FAIL"} · price residual ${Number(m.validation?.equal_price_residual||0).toExponential(2)}</div>`;}
  document.getElementById("manifest").innerHTML=empirical
  ? `<p><b>Data:</b> EMPIRICAL<br><b>Year:</b> ${esc(m.year)}<br><b>Countries:</b> ${esc(m.countries)}<br><b>Cells:</b> ${esc(m.cells)}<br><b>PPP:</b> ${esc(m.ppp)}<br><b>Productivity:</b> ${esc(m.productivity)}</p>`
  : `<p><b>Model:</b> v${esc(m.model_version)}<br><b>Data:</b> ${esc(m.data_status)}<br><b>Conservation test:</b> ${m.conservation_passed?"PASS":"FAIL"}</p>`;
@@ -39,6 +40,8 @@ function metric(r){
  if(scenario==="hickel"&&layer==="gap")return +(r.hickel_gap_eur_per_hour??r.gap??0);
  if(layer==="actual")return +(r.actual_hourly_comp_eur??r.actual??0);
  if(layer==="equal")return +(scenario==="hickel"?(r.hickel_hourly_comp_eur??r.equal??0):(r.equal_hourly_comp_eur??r.equal??0));
+ if(layer==="trade")return +(r.trade_hierarchy_net_million_eur??0);
+ if(layer==="price")return +(r.mean_price_gap??0);
  return +(r.wage_gap_eur_per_hour??r.gap??0);
 }
 function draw(world){
@@ -68,7 +71,8 @@ async function loadCountry(iso){
     ["Equal World wage gap","w* − wᴬ",d.wage_gap_eur_per_hour,"EUR / hour"],
     ["Hickel-style Northern wage","wᴺ",d.hickel_hourly_comp_eur,"EUR / hour"],
     ["Hickel-style wage gap","wᴺ − wᴬ",d.hickel_gap_eur_per_hour,"EUR / hour"],
-    ["Mean production-price gap","p* − pᴬ",d.mean_price_gap,"price-index units"]
+    ["Mean production-price gap","p* / pᴬ − 1",d.mean_price_gap,"relative price"],
+    ["Net trade hierarchy transfer","fixed Z revaluation",d.trade_hierarchy_net_million_eur,"million EUR"]
    ];
    document.getElementById("steps").innerHTML=steps.map((s,i)=>`<div class="step"><div class="num">0${i+1}</div><div><h3>${esc(s[0])}</h3><div class="eq">${esc(s[1])}</div></div><div class="value">${fmt(+s[2])}<span class="unit">${esc(s[3])}</span></div></div>`).join("");
  }else{
