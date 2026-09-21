@@ -68,16 +68,31 @@ def main():
     xr_eur=xr_usd*usd_per_eur
     idx=hours.index
     regions=pd.Index(idx.get_level_values(0))
+    # pymrio normalizes EXIOBASE country regions to ISO2, while World Bank
+    # inputs are keyed by ISO3. Convert direct-country EXIOBASE codes to ISO3
+    # before joining. EXIOBASE RoW aggregates (WA/WL/WE/WF/WM) intentionally
+    # remain unmapped in this country-level baseline.
+    try:
+        import pycountry
+    except ImportError as exc:
+        raise RuntimeError("pycountry is required to map EXIOBASE ISO2 regions to World Bank ISO3 codes") from exc
+    def iso3_from_exio(region):
+        country=pycountry.countries.get(alpha_2=str(region))
+        return country.alpha_3 if country else None
+    region_to_iso3={r:iso3_from_exio(r) for r in pd.Index(regions.unique())}
     eligible=prod.index.intersection(ppp.index).intersection(xr_eur.index)
-    keep=regions.isin(eligible)
+    keep=pd.Index([region_to_iso3.get(r) in eligible for r in regions],dtype=bool)
     hours=hours[keep]; compensation=compensation[keep]
-    countries=pd.Index(hours.index.get_level_values(0))
+    regions_kept=pd.Index(hours.index.get_level_values(0))
+    countries=pd.Index([region_to_iso3[r] for r in regions_kept])
     xr_cell=pd.Series(countries.map(xr_eur),index=hours.index,dtype=float)
     ppp_cell=pd.Series(countries.map(ppp),index=hours.index,dtype=float)
     prod_country=prod.reindex(pd.Index(countries.unique()))
-    country_hours=hours.groupby(level=0).sum()
+    country_hours=hours.groupby(pd.Index(countries)).sum()
     world_prod=float((prod_country*country_hours.reindex(prod_country.index)).sum()/country_hours.reindex(prod_country.index).sum())
     e_country=prod_country/world_prod
+    if len(hours)==0:
+        raise RuntimeError("No EXIOBASE country-sector cells matched World Bank inputs after ISO2-to-ISO3 mapping")
     e_cell=pd.Series(countries.map(e_country),index=hours.index,dtype=float)
     observed=common_currency_to_real(compensation,hours,xr_cell,ppp_cell)
     ustar,equal_real=equal_world_real_wages(observed.real_wage_intl,hours,e_cell)
@@ -117,7 +132,8 @@ def main():
 
     out=ROOT/a.out; (out/"countries").mkdir(parents=True,exist_ok=True)
     summary=[]
-    for country,g in d.groupby(level=0):
+    d["iso3"]=countries.to_numpy()
+    for country,g in d.groupby("iso3"):
         w=np.maximum(g["hours"].to_numpy(),0); denom=w.sum()
         payload={"iso3":country,"data_status":"EMPIRICAL","year":a.year,"equal_effective_remuneration_intl_per_hour":ustar,
           "actual_hourly_comp_eur":float(np.average(g.actual_hourly_comp_eur,weights=w)),
