@@ -83,6 +83,14 @@ def main():
     eligible=prod.index.intersection(ppp.index).intersection(xr_eur.index)
     keep=pd.Index([region_to_iso3.get(r) in eligible for r in regions],dtype=bool)
     hours=hours[keep]; compensation=compensation[keep]
+    # EXIOBASE contains structurally zero employment-hour cells. They are
+    # valid IO sectors, but an hourly wage is undefined there. Exclude them
+    # from the wage construction rather than treating zero hours as bad PPP.
+    # Also reject non-finite/negative compensation before division.
+    valid_labor=(hours>0) & np.isfinite(hours) & np.isfinite(compensation) & (compensation>=0)
+    dropped_zero=int((hours<=0).sum())
+    dropped_invalid=int((~np.isfinite(hours) | ~np.isfinite(compensation) | (compensation<0)).sum())
+    hours=hours[valid_labor]; compensation=compensation[valid_labor]
     regions_kept=pd.Index(hours.index.get_level_values(0))
     countries=pd.Index([region_to_iso3[r] for r in regions_kept])
     xr_cell=pd.Series(countries.map(xr_eur),index=hours.index,dtype=float)
@@ -92,8 +100,17 @@ def main():
     world_prod=float((prod_country*country_hours.reindex(prod_country.index)).sum()/country_hours.reindex(prod_country.index).sum())
     e_country=prod_country/world_prod
     if len(hours)==0:
-        raise RuntimeError("No EXIOBASE country-sector cells matched World Bank inputs after ISO2-to-ISO3 mapping")
+        raise RuntimeError("No positive-hour EXIOBASE country-sector cells matched World Bank inputs")
     e_cell=pd.Series(countries.map(e_country),index=hours.index,dtype=float)
+    valid_inputs=(xr_cell>0) & (ppp_cell>0) & (e_cell>0) & np.isfinite(xr_cell) & np.isfinite(ppp_cell) & np.isfinite(e_cell)
+    dropped_macro=int((~valid_inputs).sum())
+    if dropped_macro:
+        hours=hours[valid_inputs]; compensation=compensation[valid_inputs]
+        countries=countries[valid_inputs.to_numpy()]
+        xr_cell=xr_cell[valid_inputs]; ppp_cell=ppp_cell[valid_inputs]; e_cell=e_cell[valid_inputs]
+    if len(hours)==0:
+        raise RuntimeError("No valid labor cells remain after checking hours, PPP, exchange rates and productivity")
+    print(f"labor-cell validation: kept={len(hours)}, zero_hours_dropped={dropped_zero}, invalid_labor_dropped={dropped_invalid}, invalid_macro_dropped={dropped_macro}")
     observed=common_currency_to_real(compensation,hours,xr_cell,ppp_cell)
     ustar,equal_real=equal_world_real_wages(observed.real_wage_intl,hours,e_cell)
     back=real_wage_to_common(equal_real,ppp_cell,xr_cell)
@@ -147,7 +164,7 @@ def main():
         (out/"countries"/f"{country}.json").write_text(json.dumps(payload,ensure_ascii=False)+"\n")
         summary.append({k:payload[k] for k in ["iso3","year","region_group","actual_hourly_comp_eur","equal_hourly_comp_eur","wage_gap_eur_per_hour","hickel_hourly_comp_eur","hickel_gap_eur_per_hour","mean_price_gap"]})
     (out/"summary.json").write_text(json.dumps(summary,ensure_ascii=False)+"\n")
-    (out/"manifest.json").write_text(json.dumps({"data_status":"EMPIRICAL","year":a.year,"exiobase_archive":Path(a.archive).name,"countries":len(summary),"cells":len(d),"productivity":"World Bank SL.GDP.PCAP.EM.KD","ppp":"World Bank PA.NUS.PPP","exchange_rate":"World Bank PA.NUS.FCRF + ECB USD/EUR annual reference rate","ppp_role":"baseline: EXIOBASE EUR -> LCU via MER -> international dollars via PPP -> EWA -> LCU -> EUR for MRIO prices","hickel_scenario":hickel_label,"north_south_definition":"config/regions_hickel_2021.json","exiobase_year_status":"2021 is a now-cast in EXIOBASE 3.9; see docs/hickel-comparison.md","note":"Static EWA plus Hickel-style comparison. Current technology/productivity retained. RoW aggregates excluded where no direct country productivity mapping exists."},indent=2)+"\n")
+    (out/"manifest.json").write_text(json.dumps({"data_status":"EMPIRICAL","year":a.year,"exiobase_archive":Path(a.archive).name,"countries":len(summary),"cells":len(d),"productivity":"World Bank SL.GDP.PCAP.EM.KD","ppp":"World Bank PA.NUS.PPP","exchange_rate":"World Bank PA.NUS.FCRF + ECB USD/EUR annual reference rate","ppp_role":"baseline: EXIOBASE EUR -> LCU via MER -> international dollars via PPP -> EWA -> LCU -> EUR for MRIO prices","hickel_scenario":hickel_label,"north_south_definition":"config/regions_hickel_2021.json","exiobase_year_status":"2021 is a now-cast in EXIOBASE 3.9; see docs/hickel-comparison.md","labor_cell_validation":{"zero_hours_dropped":dropped_zero,"invalid_labor_dropped":dropped_invalid,"invalid_macro_dropped":dropped_macro},"note":"Static EWA plus Hickel-style comparison. Current technology/productivity retained. RoW aggregates excluded where no direct country productivity mapping exists. Zero-hour sectors are excluded from hourly-wage construction because hourly remuneration is undefined for them."},indent=2)+"\n")
     print(f"built {len(summary)} countries / {len(d)} country-sector cells")
 
 if __name__=="__main__": main()
