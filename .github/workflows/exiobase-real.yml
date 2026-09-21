@@ -18,6 +18,7 @@ jobs:
         with: {python-version: "3.11"}
       - run: pip install -r requirements.txt pymrio pyyaml
       - run: python scripts/fetch_world_bank.py --year "${{ inputs.year }}"
+      - run: python scripts/fetch_ecb_eurusd.py --year "${{ inputs.year }}"
       - run: python scripts/fetch_exiobase.py --year "${{ inputs.year }}" --format ixi
       - run: python scripts/build_exiobase_results.py --year "${{ inputs.year }}" --archive "data/raw/exiobase/IOT_${{ inputs.year }}_ixi.zip"
       - name: Commit empirical outputs and source metadata
