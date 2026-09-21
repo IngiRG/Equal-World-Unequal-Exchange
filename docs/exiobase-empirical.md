@@ -14,7 +14,27 @@ The World Bank itself cautions that modeled/imputed productivity observations ca
 
 ## Currency/PPP treatment
 
-EXIOBASE's monetary core is already expressed in a common currency (million EUR). We therefore **do not divide EXIOBASE compensation by country PPP**: doing so would incorrectly treat a common-currency MRIO value as local currency. PPP is retrieved and retained for comparison/robustness layers. A PPP-real-wage variant requires local-currency compensation data or an explicit exchange-rate reconstruction.
+PPP is a **baseline EWA transformation**, not merely a robustness variable.
+
+EXIOBASE monetary compensation is in common-currency EUR. World Bank PPP is LCU per international dollar, so units must first be reconciled. The pipeline retrieves World Bank official exchange rates (LCU/USD) and the ECB annual USD/EUR reference rate:
+
+`XR_i^{LCU/EUR} = XR_i^{LCU/USD} × XR^{USD/EUR}`.
+
+Then, cell by cell:
+
+`w_i^{LCU} = (C_i^{EUR}/L_i) × XR_i^{LCU/EUR}`
+
+`w_i^R = w_i^{LCU} / PPP_i`.
+
+EWA is constructed in international-dollar purchasing-power space. After the Equal World real wage is found,
+
+`w_i^{LCU*}=w_i^{R*}×PPP_i`
+
+and
+
+`w_i^{EUR*}=w_i^{LCU*}/XR_i^{LCU/EUR}`.
+
+The last conversion puts the counterfactual labor cost back into EXIOBASE's monetary unit before solving production prices. Thus two otherwise equivalent countries can have different Equal World nominal wages because their PPP price levels differ.
 
 ## Effective labor
 
