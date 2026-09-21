@@ -1,0 +1,6 @@
+{
+  "indicator": "SL.GDP.PCAP.EM.KD",
+  "year": 2021,
+  "rows": 220,
+  "api": "https://api.worldbank.org/v2/country/all/indicator/SL.GDP.PCAP.EM.KD"
+}

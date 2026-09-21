@@ -1,0 +1,20 @@
+{
+  "data_status": "EMPIRICAL",
+  "year": 2021,
+  "exiobase_archive": "IOT_2021_ixi.zip",
+  "countries": 43,
+  "cells": 5785,
+  "productivity": "World Bank SL.GDP.PCAP.EM.KD",
+  "ppp": "World Bank PA.NUS.PPP",
+  "exchange_rate": "World Bank PA.NUS.FCRF + ECB USD/EUR annual reference rate",
+  "ppp_role": "baseline: EXIOBASE EUR -> LCU via MER -> international dollars via PPP -> EWA -> LCU -> EUR for MRIO prices",
+  "hickel_scenario": "Northern wage, all-skill approximation",
+  "north_south_definition": "config/regions_hickel_2021.json",
+  "exiobase_year_status": "2021 is a now-cast in EXIOBASE 3.9; see docs/hickel-comparison.md",
+  "labor_cell_validation": {
+    "zero_hours_dropped": 1224,
+    "invalid_labor_dropped": 0,
+    "invalid_macro_dropped": 0
+  },
+  "note": "Static EWA plus Hickel-style comparison. Current technology/productivity retained. RoW aggregates excluded where no direct country productivity mapping exists. Zero-hour sectors are excluded from hourly-wage construction because hourly remuneration is undefined for them."
+}

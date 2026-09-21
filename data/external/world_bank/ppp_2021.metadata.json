@@ -1,0 +1,6 @@
+{
+  "indicator": "PA.NUS.PPP",
+  "year": 2021,
+  "rows": 201,
+  "api": "https://api.worldbank.org/v2/country/all/indicator/PA.NUS.PPP"
+}
