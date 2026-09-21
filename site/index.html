@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Equal World Atlas — Empirical EWA</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+</head><body>
+<header><div><b>EQUAL WORLD ATLAS</b><span>Computational companion to Equal World Analysis</span></div><a href="methodology.html">Methodology</a></header>
+<div class="warning">RESEARCH PROTOTYPE · CURRENT MAP VALUES ARE SYNTHETIC DEMONSTRATION DATA, NOT EMPIRICAL FINDINGS.</div>
+<main>
+<section class="hero"><p class="eyebrow">UNEQUAL COMPARED WITH WHAT?</p><h1>From observed difference to a<br>counterfactual hierarchy gap.</h1><p>Click a country to inspect every transformation from nominal remuneration to the Equal World benchmark. The audit trail exposes equations, inputs and assumptions rather than hiding them behind a headline estimate.</p></section>
+<section class="controls"><label>Map layer <select id="layer"><option value="gap">Equal-world wage gap</option><option value="actual">Actual real wage</option><option value="equal">Equal-world real wage</option></select></label><div id="legend"></div></section>
+<section class="mapwrap"><svg id="map" viewBox="0 0 960 500" aria-label="Interactive world map"></svg><div id="tooltip"></div></section>
+<section class="lower"><div><p class="eyebrow">AUDIT TRAIL</p><h2 id="country-title">Select a country</h2><p id="country-note">Countries with demonstration observations are outlined on the map. Countries without a country-specific observation remain neutral.</p><div id="steps"></div></div>
+<aside><h3>Baseline specification</h3><p>Static EWA retains the supplied productive structure and effective-labor coefficients, equalizes remuneration per equivalent effective-labor unit, and conserves the global real remuneration pool.</p><div id="manifest"></div><a class="button" href="methodology.html">Read equations →</a></aside></section>
+</main><footer>Equal World Analysis · Reproducible research prototype</footer><script src="app.js"></script></body></html>

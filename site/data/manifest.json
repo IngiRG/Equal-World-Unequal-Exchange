@@ -1,0 +1,9 @@
+{
+  "model_version": "0.1.0",
+  "data_status": "synthetic demonstration",
+  "source": "data/demo/country_sector.csv",
+  "equal_effective_remuneration": 26.048780487804876,
+  "actual_real_remuneration_pool": 10680,
+  "equal_world_real_remuneration_pool": 10680,
+  "conservation_passed": true
+}
