@@ -25,15 +25,25 @@
     "prices_finite": true,
     "north_country_count": 30,
     "south_country_count": 13,
+    "row_regions_in_embodied_labor": [
+      "WA",
+      "WE",
+      "WF",
+      "WL",
+      "WM"
+    ],
+    "employment_hour_scale_to_hours": 1.0,
     "passed": true
   },
   "embodied_labor": {
-    "south_to_north_hours": 422757.677027091,
-    "north_to_south_hours": 47701.03457787534,
-    "net_south_to_north_hours": 375056.64244921564,
-    "hickel_style_all_skill_value_eur": 9520599.711315269,
-    "ewa_origin_wage_value_eur": 281369.9123000429,
-    "reference_net_hours_billion": 826.0
+    "south_to_north_hours": 652398.8343684726,
+    "north_to_south_hours": 81646.5508292394,
+    "net_south_to_north_hours": 570752.2835392331,
+    "hickel_style_all_skill_value_eur": 14488222.339994762,
+    "ewa_origin_wage_value_eur": -382194.23452925496,
+    "reference_net_hours_billion": 826.0,
+    "row_treatment": "WA/WL/WE/WF/WM included in physical South; explicit IMF-advanced economies form North",
+    "unit": "hours"
   },
   "price_system": "full EXIOBASE A/Z/Y; unsupported wage cells retain actual labor compensation; non-labor VA residual retained",
   "note": "Static EWA. Physical embodied-labor flows are calculated separately from monetary valuation. The Hickel-style value remains an all-skill approximation, not an exact skill-matched replication."
