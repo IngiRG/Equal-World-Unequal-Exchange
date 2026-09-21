@@ -33,13 +33,13 @@ def main():
           "sectors":g[["sector","real_wage","effective_labor","actual_effective_remuneration","equal_real_wage","real_wage_gap"]].to_dict("records"),
           "interpretation":{"actual_real_wage":actual,"equal_real_wage":equal,"gap":gap,
              "note":"Positive means remuneration would be higher under this specified Equal World. This demo does not establish an empirical transfer or imperialism."}}
-        (dest/"countries"/f"{iso3}.json").write_text(json.dumps(payload,indent=2)+"\n")
+        (dest/"countries"/f"{iso3}.json").write_text(json.dumps(payload,indent=2,ensure_ascii=False)+"\n")
         summary.append({"iso3":iso3,"country":r.country,"gap":gap,"actual":actual,"equal":equal})
-    (dest/"summary.json").write_text(json.dumps(summary,indent=2)+"\n")
+    (dest/"summary.json").write_text(json.dumps(summary,indent=2,ensure_ascii=False)+"\n")
     manifest={"model_version":"0.1.0","data_status":"synthetic demonstration","source":"data/demo/country_sector.csv",
       "equal_effective_remuneration":benchmark,"actual_real_remuneration_pool":actual_pool,
       "equal_world_real_remuneration_pool":equal_pool,"conservation_passed":ok}
-    (dest/"manifest.json").write_text(json.dumps(manifest,indent=2)+"\n")
+    (dest/"manifest.json").write_text(json.dumps(manifest,indent=2,ensure_ascii=False)+"\n")
     print(f"Built {len(summary)} country result files; conservation={ok}")
 
 if __name__=="__main__": main()
