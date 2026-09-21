@@ -1,0 +1,44 @@
+[
+  {
+    "iso3": "BGD",
+    "country": "Bangladesh",
+    "gap": 2.607154471544714,
+    "actual": 8.333333333333334,
+    "equal": 10.940487804878048
+  },
+  {
+    "iso3": "BRA",
+    "country": "Brazil",
+    "gap": 2.2341463414634113,
+    "actual": 16,
+    "equal": 18.23414634146341
+  },
+  {
+    "iso3": "DEU",
+    "country": "Germany",
+    "gap": -5.253658536585365,
+    "actual": 30,
+    "equal": 24.746341463414634
+  },
+  {
+    "iso3": "IND",
+    "country": "India",
+    "gap": 1.0243902439024382,
+    "actual": 12,
+    "equal": 13.024390243902438
+  },
+  {
+    "iso3": "USA",
+    "country": "United States",
+    "gap": -3.951219512195124,
+    "actual": 30,
+    "equal": 26.048780487804876
+  },
+  {
+    "iso3": "ZAF",
+    "country": "South Africa",
+    "gap": 2.348373983739837,
+    "actual": 14.583333333333334,
+    "equal": 16.93170731707317
+  }
+]
