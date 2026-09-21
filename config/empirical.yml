@@ -6,6 +6,8 @@ exiobase:
 world_bank:
   ppp_indicator: "PA.NUS.PPP"
   productivity_indicator: "SL.GDP.PCAP.EM.KD"
+  exchange_rate_indicator: "PA.NUS.FCRF"
+  eur_usd_source: "ECB annual reference rate; required for exact EUR conversion"
 model:
   productivity_normalization: "world_hours_weighted_mean"
   wage_pool: "exiobase_compensation_of_employees"
