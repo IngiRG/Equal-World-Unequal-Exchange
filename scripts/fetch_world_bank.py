@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd, requests
 
 API="https://api.worldbank.org/v2/country/all/indicator/{indicator}"
-INDICATORS={"ppp":"PA.NUS.PPP","productivity":"SL.GDP.PCAP.EM.KD"}
+INDICATORS={"ppp":"PA.NUS.PPP","exchange_usd":"PA.NUS.FCRF","productivity":"SL.GDP.PCAP.EM.KD"}
 
 def fetch(indicator,year):
     r=requests.get(API.format(indicator=indicator),params={"format":"json","date":year,"per_page":400},timeout=90)
