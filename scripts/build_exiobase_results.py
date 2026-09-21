@@ -46,9 +46,12 @@ def main():
     # "Employment hours:" rows. This preserves every skill/gender component
     # instead of arbitrarily selecting one.
     hrows=find_rows(emp.index,["employment hours"])
-    crow=find_row(fac.index,["compensation","employees"])
+    # Compensation of employees is likewise split by skill. Sum all skill
+    # rows so the compensation numerator covers the same aggregate labor scope
+    # as the hours denominator.
+    crows=find_rows(fac.index,["compensation","employees"])
     hours=emp.iloc[hrows].astype(float).sum(axis=0)
-    compensation=fac.iloc[crow].astype(float)
+    compensation=fac.iloc[crows].astype(float).sum(axis=0)
     # Align country-sector columns.
     hours=hours.reindex(compensation.index if isinstance(compensation.index,pd.MultiIndex) else compensation.index)
     if not isinstance(compensation.index,pd.MultiIndex):
