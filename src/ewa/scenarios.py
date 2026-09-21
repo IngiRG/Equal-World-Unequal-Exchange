@@ -2,8 +2,10 @@
 from __future__ import annotations
 import numpy as np, pandas as pd
 
-def assign_north_south(index, north_iso3:set[str]):
-    c=pd.Index(index.get_level_values(0))
+def assign_north_south(index, north_iso3:set[str], iso3=None):
+    # EXIOBASE's MultiIndex uses ISO2 region codes, while the published
+    # North/South classification is ISO3. Prefer an explicit ISO3 vector.
+    c=pd.Index(iso3) if iso3 is not None else pd.Index(index.get_level_values(0))
     return pd.Series(np.where(c.isin(north_iso3),"North","South"),index=index)
 
 def hickel_northern_wage_counterfactual(df, north_iso3:set[str], skill_col=None):
@@ -14,7 +16,9 @@ def hickel_northern_wage_counterfactual(df, north_iso3:set[str], skill_col=None)
     explicitly labelled all-skill approximation and MUST NOT be described as
     a replication of Hickel et al.
     """
-    d=df.copy(); d["region_group"]=assign_north_south(d.index,north_iso3).values
+    d=df.copy()
+    iso3=d["iso3"].to_numpy() if "iso3" in d.columns else None
+    d["region_group"]=assign_north_south(d.index,north_iso3,iso3=iso3).values
     group=[skill_col] if skill_col and skill_col in d.columns else []
     north=d[d.region_group=="North"]
     if group:
