@@ -52,3 +52,20 @@ Every site build writes `site/data/manifest.json` with model version, timestamp,
 ## License
 
 Code: MIT. Data retain their original source licenses; see [docs/data-sources.md](docs/data-sources.md).
+
+
+## Real empirical EXIOBASE pipeline
+
+The repository now includes a pinned real-data pipeline using EXIOBASE 3.9.6 plus World Bank PPP and labor-productivity indicators.
+
+Run:
+
+```bash
+python scripts/fetch_world_bank.py --year 2020
+python scripts/fetch_exiobase.py --year 2020 --format ixi
+python scripts/build_exiobase_results.py --year 2020 --archive data/raw/exiobase/IOT_2020_ixi.zip
+```
+
+Or run the **Build empirical EXIOBASE EWA** workflow manually in GitHub Actions. See `docs/exiobase-empirical.md` and `docs/empirical-release-checklist.md`.
+
+The pipeline fails rather than silently guessing when EXIOBASE account labels, country mappings, or required observations are ambiguous.
