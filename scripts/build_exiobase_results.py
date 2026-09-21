@@ -9,7 +9,8 @@ import argparse,json,sys
 from pathlib import Path
 import numpy as np,pandas as pd
 ROOT=Path(__file__).resolve().parents[1]; sys.path.insert(0,str(ROOT/"src"))
-from ewa.exiobase import construct_counterfactual,counterfactual_prices
+from ewa.exiobase import counterfactual_prices
+from ewa.ppp import common_currency_to_real,equal_world_real_wages,real_wage_to_common
 from ewa.scenarios import hickel_northern_wage_counterfactual
 
 def find_row(index,needles):
@@ -38,14 +39,42 @@ def main():
     wb=ROOT/"data/external/world_bank"
     prod=pd.read_csv(wb/f"productivity_{a.year}.csv").set_index("iso3")["value"]
     ppp=pd.read_csv(wb/f"ppp_{a.year}.csv").set_index("iso3")["value"]
-    # EXIOBASE uses region codes; most individual countries are ISO-like. RoW
-    # aggregates are excluded from country-productivity EWA until an explicit
-    # aggregation rule is supplied.
+    xr_usd=pd.read_csv(wb/f"exchange_usd_{a.year}.csv").set_index("iso3")["value"]
+    ecb=json.loads((ROOT/"data/external/ecb"/f"eur_usd_{a.year}.json").read_text())
+    usd_per_eur=float(ecb["usd_per_eur"])
+    # World Bank PA.NUS.FCRF is LCU/USD. EXIOBASE is EUR, so LCU/EUR =
+    # (LCU/USD)*(USD/EUR). This gives the unit-consistent route into PPP space.
+    xr_eur=xr_usd*usd_per_eur
     idx=hours.index
     regions=pd.Index(idx.get_level_values(0))
-    keep=regions.isin(prod.index)
+    eligible=prod.index.intersection(ppp.index).intersection(xr_eur.index)
+    keep=regions.isin(eligible)
     hours=hours[keep]; compensation=compensation[keep]
-    d,ustar=construct_counterfactual(compensation,hours,prod,ppp)
+    countries=pd.Index(hours.index.get_level_values(0))
+    xr_cell=pd.Series(countries.map(xr_eur),index=hours.index,dtype=float)
+    ppp_cell=pd.Series(countries.map(ppp),index=hours.index,dtype=float)
+    prod_country=prod.reindex(pd.Index(countries.unique()))
+    country_hours=hours.groupby(level=0).sum()
+    world_prod=float((prod_country*country_hours.reindex(prod_country.index)).sum()/country_hours.reindex(prod_country.index).sum())
+    e_country=prod_country/world_prod
+    e_cell=pd.Series(countries.map(e_country),index=hours.index,dtype=float)
+    observed=common_currency_to_real(compensation,hours,xr_cell,ppp_cell)
+    ustar,equal_real=equal_world_real_wages(observed.real_wage_intl,hours,e_cell)
+    back=real_wage_to_common(equal_real,ppp_cell,xr_cell)
+    d=pd.DataFrame(index=hours.index)
+    d["compensation"]=compensation; d["hours"]=hours
+    d["actual_hourly_comp_eur"]=compensation/hours
+    d["nominal_local_wage"]=observed.nominal_local_wage
+    d["real_wage_intl"]=observed.real_wage_intl
+    d["effective_labor"]=e_cell
+    d["equal_real_wage_intl"]=equal_real
+    d["equal_nominal_local_wage"]=back.equal_nominal_local_wage
+    d["equal_hourly_comp_eur"]=back.equal_common_wage
+    d["equal_compensation"]=d.equal_hourly_comp_eur*d.hours
+    d["wage_gap_eur_per_hour"]=d.equal_hourly_comp_eur-d.actual_hourly_comp_eur
+    d["real_wage_gap_intl_per_hour"]=d.equal_real_wage_intl-d.real_wage_intl
+    d["ppp_lcu_per_intl_dollar"]=ppp_cell
+    d["exchange_lcu_per_eur"]=xr_cell
     region_cfg=json.loads((ROOT/"config/regions_hickel_2021.json").read_text())
     north=set(region_cfg["north_iso3"])
     hickel,hickel_label=hickel_northern_wage_counterfactual(d,north)
@@ -69,7 +98,7 @@ def main():
     summary=[]
     for country,g in d.groupby(level=0):
         w=np.maximum(g["hours"].to_numpy(),0); denom=w.sum()
-        payload={"iso3":country,"data_status":"EMPIRICAL","year":a.year,"equal_effective_remuneration_eur_per_hour":ustar,
+        payload={"iso3":country,"data_status":"EMPIRICAL","year":a.year,"equal_effective_remuneration_intl_per_hour":ustar,
           "actual_hourly_comp_eur":float(np.average(g.actual_hourly_comp_eur,weights=w)),
           "equal_hourly_comp_eur":float(np.average(g.equal_hourly_comp_eur,weights=w)),
           "wage_gap_eur_per_hour":float(np.average(g.wage_gap_eur_per_hour,weights=w)),
@@ -77,11 +106,11 @@ def main():
           "region_group":str(g.region_group.iloc[0]),
           "hickel_hourly_comp_eur":float(np.average(g.hickel_hourly_comp_eur,weights=w)),
           "hickel_gap_eur_per_hour":float(np.average(g.hickel_gap_eur_per_hour,weights=w)),
-          "sectors":[{"sector":str(i[1]),**{k:float(row[k]) for k in ["actual_hourly_comp_eur","effective_labor","equal_hourly_comp_eur","wage_gap_eur_per_hour","hickel_hourly_comp_eur","hickel_gap_eur_per_hour","actual_price_index","equal_price_index","price_gap"]}} for i,row in g.iterrows()]}
+          "sectors":[{"sector":str(i[1]),**{k:float(row[k]) for k in ["actual_hourly_comp_eur","nominal_local_wage","real_wage_intl","effective_labor","equal_real_wage_intl","equal_nominal_local_wage","equal_hourly_comp_eur","wage_gap_eur_per_hour","real_wage_gap_intl_per_hour","ppp_lcu_per_intl_dollar","exchange_lcu_per_eur","hickel_hourly_comp_eur","hickel_gap_eur_per_hour","actual_price_index","equal_price_index","price_gap"]}} for i,row in g.iterrows()]}
         (out/"countries"/f"{country}.json").write_text(json.dumps(payload,ensure_ascii=False)+"\n")
         summary.append({k:payload[k] for k in ["iso3","year","region_group","actual_hourly_comp_eur","equal_hourly_comp_eur","wage_gap_eur_per_hour","hickel_hourly_comp_eur","hickel_gap_eur_per_hour","mean_price_gap"]})
     (out/"summary.json").write_text(json.dumps(summary,ensure_ascii=False)+"\n")
-    (out/"manifest.json").write_text(json.dumps({"data_status":"EMPIRICAL","year":a.year,"exiobase_archive":Path(a.archive).name,"countries":len(summary),"cells":len(d),"productivity":"World Bank SL.GDP.PCAP.EM.KD","ppp":"World Bank PA.NUS.PPP","hickel_scenario":hickel_label,"north_south_definition":"config/regions_hickel_2021.json","exiobase_year_status":"2021 is a now-cast in EXIOBASE 3.9; see docs/hickel-comparison.md","note":"Static EWA plus Hickel-style comparison. Current technology/productivity retained. RoW aggregates excluded where no direct country productivity mapping exists."},indent=2)+"\n")
+    (out/"manifest.json").write_text(json.dumps({"data_status":"EMPIRICAL","year":a.year,"exiobase_archive":Path(a.archive).name,"countries":len(summary),"cells":len(d),"productivity":"World Bank SL.GDP.PCAP.EM.KD","ppp":"World Bank PA.NUS.PPP","exchange_rate":"World Bank PA.NUS.FCRF + ECB USD/EUR annual reference rate","ppp_role":"baseline: EXIOBASE EUR -> LCU via MER -> international dollars via PPP -> EWA -> LCU -> EUR for MRIO prices","hickel_scenario":hickel_label,"north_south_definition":"config/regions_hickel_2021.json","exiobase_year_status":"2021 is a now-cast in EXIOBASE 3.9; see docs/hickel-comparison.md","note":"Static EWA plus Hickel-style comparison. Current technology/productivity retained. RoW aggregates excluded where no direct country productivity mapping exists."},indent=2)+"\n")
     print(f"built {len(summary)} countries / {len(d)} country-sector cells")
 
 if __name__=="__main__": main()
