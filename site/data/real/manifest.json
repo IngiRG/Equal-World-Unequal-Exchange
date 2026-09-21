@@ -16,5 +16,25 @@
     "invalid_labor_dropped": 0,
     "invalid_macro_dropped": 0
   },
-  "note": "Static EWA plus Hickel-style comparison. Current technology/productivity retained. RoW aggregates excluded where no direct country productivity mapping exists. Zero-hour sectors are excluded from hourly-wage construction because hourly remuneration is undefined for them."
+  "validation": {
+    "real_remuneration_conservation_relative_error": 1.2052018903838203e-16,
+    "actual_price_residual_abs": 1.4988010832439613e-14,
+    "equal_price_residual_abs": 6.961822509765625e-05,
+    "actual_price_residual_relative": 1.49880108324395e-14,
+    "equal_price_residual_relative": 1.7706824279389193e-14,
+    "prices_finite": true,
+    "north_country_count": 30,
+    "south_country_count": 13,
+    "passed": true
+  },
+  "embodied_labor": {
+    "south_to_north_hours": 422757.677027091,
+    "north_to_south_hours": 47701.03457787534,
+    "net_south_to_north_hours": 375056.64244921564,
+    "hickel_style_all_skill_value_eur": 9520599.711315269,
+    "ewa_origin_wage_value_eur": 281369.9123000429,
+    "reference_net_hours_billion": 826.0
+  },
+  "price_system": "full EXIOBASE A/Z/Y; unsupported wage cells retain actual labor compensation; non-labor VA residual retained",
+  "note": "Static EWA. Physical embodied-labor flows are calculated separately from monetary valuation. The Hickel-style value remains an all-skill approximation, not an exact skill-matched replication."
 }
