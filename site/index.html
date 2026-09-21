@@ -6,7 +6,7 @@
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
 </head><body>
 <header><div><b>EQUAL WORLD ATLAS</b><span>Computational companion to Equal World Analysis</span></div><a href="methodology.html">Methodology</a></header>
-<div class="warning">RESEARCH PROTOTYPE · CURRENT MAP VALUES ARE SYNTHETIC DEMONSTRATION DATA, NOT EMPIRICAL FINDINGS.</div>
+<div class="warning" id="status-banner">LOADING DATA STATUS…</div>
 <main>
 <section class="hero"><p class="eyebrow">UNEQUAL COMPARED WITH WHAT?</p><h1>From observed difference to a<br>counterfactual hierarchy gap.</h1><p>Click a country to inspect every transformation from nominal remuneration to the Equal World benchmark. The audit trail exposes equations, inputs and assumptions rather than hiding them behind a headline estimate.</p></section>
 <section class="controls"><label>Scenario <select id="scenario"><option value="ewa">EWA</option><option value="hickel">Hickel-style Northern wage</option></select></label><label>Region <select id="region"><option value="world">World</option><option value="north">Global North</option><option value="south">Global South</option><option value="compare">North vs South</option></select></label><label>Map layer <select id="layer"><option value="gap">Equal-world wage gap</option><option value="actual">Actual real wage</option><option value="equal">Equal-world real wage</option></select></label><div id="legend"></div></section>
