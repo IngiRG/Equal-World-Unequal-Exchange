@@ -1,6 +1,6 @@
 # Equal World / Unequal Exchange — Empirical EWA
 
-Reproducible computational companion for **Equal World Analysis (EWA)**.
+Reproducible computational companion for **Equal World Analysis (EWA)**.\n\n## Interactive Atlas\n\nThe public GitHub Pages application is the **Equal World Atlas**. The repository homepage you are reading is documentation, not the application. After a successful empirical EXIOBASE build, the Atlas automatically prefers `site/data/real/` and falls back to the synthetic demonstration dataset only when empirical output is absent.\n
 
 This repository contains:
 
