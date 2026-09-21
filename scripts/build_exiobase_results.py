@@ -13,11 +13,25 @@ from ewa.exiobase import counterfactual_prices
 from ewa.ppp import common_currency_to_real,equal_world_real_wages,real_wage_to_common
 from ewa.scenarios import hickel_northern_wage_counterfactual
 
-def find_row(index,needles):
+def find_rows(index,needles):
+    """Return all satellite rows matching every needle.
+
+    Some EXIOBASE extensions split an account across categories. Employment
+    hours, for example, are reported by skill and gender. For total hours these
+    rows must be summed rather than treated as an ambiguity.
+    """
     labels=[str(x) for x in index]
-    hits=[(i,s) for i,s in enumerate(labels) if all(n.lower() in s.lower() for n in needles)]
-    if len(hits)!=1: raise RuntimeError(f"Expected one row matching {needles}; found {[x[1] for x in hits]}")
-    return hits[0][0]
+    hits=[i for i,s in enumerate(labels) if all(n.lower() in s.lower() for n in needles)]
+    if not hits:
+        raise RuntimeError(f"Expected at least one row matching {needles}; found none")
+    return hits
+
+def find_row(index,needles):
+    hits=find_rows(index,needles)
+    if len(hits)!=1:
+        labels=[str(index[i]) for i in hits]
+        raise RuntimeError(f"Expected one row matching {needles}; found {labels}")
+    return hits[0]
 
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument("--year",type=int,default=2021); ap.add_argument("--archive",required=True); ap.add_argument("--out",default="site/data/real")
@@ -27,9 +41,13 @@ def main():
     # Satellite rows are discovered rather than hard-coded; ambiguity aborts.
     emp=mrio.employment.F
     fac=mrio.factor_inputs.F
-    hrow=find_row(emp.index,["hours"])
+    # EXIOBASE employment hours are disaggregated by skill and gender. EWA's
+    # current baseline uses total observed hours per country-sector, so sum all
+    # "Employment hours:" rows. This preserves every skill/gender component
+    # instead of arbitrarily selecting one.
+    hrows=find_rows(emp.index,["employment hours"])
     crow=find_row(fac.index,["compensation","employees"])
-    hours=emp.iloc[hrow].astype(float)
+    hours=emp.iloc[hrows].astype(float).sum(axis=0)
     compensation=fac.iloc[crow].astype(float)
     # Align country-sector columns.
     hours=hours.reindex(compensation.index if isinstance(compensation.index,pd.MultiIndex) else compensation.index)
