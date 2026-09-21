@@ -169,8 +169,11 @@ def main():
     res_a=price_residual(A_full,pa,va_a); res_e=price_residual(A_full,pe,va_e)
     if not (np.isfinite(pa).all() and np.isfinite(pe).all()):
         raise RuntimeError("Full MRIO price system produced non-finite values")
-    if max(res_a,res_e)>1e-8:
-        raise RuntimeError(f"MRIO price residual too large: actual={res_a}, equal={res_e}")
+    # Sparse LU on the full EXIOBASE system is assessed relative to the scale
+    # of the solved price vector. An absolute residual alone is misleading for
+    # a large, ill-scaled MRIO system.
+    if max(res_a["rel_max"],res_e["rel_max"])>1e-9:
+        raise RuntimeError(f"MRIO relative price residual too large: actual={res_a}, equal={res_e}")
     price_ratio=np.divide(pe,pa,out=np.ones_like(pe),where=np.abs(pa)>1e-15)
     price_ratio_s=pd.Series(price_ratio,index=full_index)
     d["actual_price_index"]=1.0
@@ -217,12 +220,13 @@ def main():
     conservation_rel=abs(equal_real_pool-actual_real_pool)/max(abs(actual_real_pool),1e-30)
     validation={
       "real_remuneration_conservation_relative_error":conservation_rel,
-      "actual_price_residual":res_a,"equal_price_residual":res_e,
+      "actual_price_residual_abs":res_a["abs_max"],"equal_price_residual_abs":res_e["abs_max"],
+      "actual_price_residual_relative":res_a["rel_max"],"equal_price_residual_relative":res_e["rel_max"],
       "prices_finite":bool(np.isfinite(pa).all() and np.isfinite(pe).all()),
       "north_country_count":int(d.loc[d.region_group=="North","iso3"].nunique()),
       "south_country_count":int(d.loc[d.region_group=="South","iso3"].nunique())
     }
-    validation["passed"]=bool(conservation_rel<1e-10 and max(res_a,res_e)<1e-8 and validation["north_country_count"]>0 and validation["south_country_count"]>0)
+    validation["passed"]=bool(conservation_rel<1e-10 and max(res_a["rel_max"],res_e["rel_max"])<1e-9 and validation["north_country_count"]>0 and validation["south_country_count"]>0)
     if not validation["passed"]: raise RuntimeError(f"Empirical release validation failed: {validation}")
 
     out=ROOT/a.out; (out/"countries").mkdir(parents=True,exist_ok=True)
